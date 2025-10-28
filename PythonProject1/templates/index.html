@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT4All Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffe6f0;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #ff66a3;
+        }
+
+        #chatbox {
+            border: 1px solid #ff99c2;
+            background-color: #fff0f5;
+            padding: 15px;
+            height: 400px;
+            overflow-y: auto;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .user {
+            color: #d63384;
+            margin: 5px 0;
+            text-align: right;
+        }
+
+        .bot {
+            color: #b30059;
+            margin: 5px 0;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+        input[type="text"] {
+            width: 75%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ff99c2;
+        }
+
+        button {
+            width: 20%;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            background-color: #ff66a3;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #ff3385;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #b30059;
+            font-size: 14px;
+        }
+
+        /* Typing animation cursor */
+        .typing::after {
+            content: '|';
+            animation: blink 0.8s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        #typingIndicator {
+            text-align: left;
+            color: #b30059;
+            font-style: italic;
+            font-size: 13px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>GPT4All Chatbot</h2>
+    <div id="chatbox"></div>
+    <div id="typingIndicator">💬 AI is typing...</div>
+
+    <input type="text" id="userInput" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
+
+    <footer>
+        made by Salam Shihadeh Class 10B
+    </footer>
+
+    <script>
+        const chatbox = document.getElementById("chatbox");
+        const userInput = document.getElementById("userInput");
+        const typingIndicator = document.getElementById("typingIndicator");
+
+        function appendMessage(sender, text, typing = false) {
+            const messageDiv = document.createElement("div");
+            messageDiv.className = sender;
+            messageDiv.textContent = text;
+            if (typing) messageDiv.classList.add("typing");
+            chatbox.appendChild(messageDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;
+            return messageDiv;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            appendMessage("user", "You: " + message);
+            userInput.value = "";
+
+            typingIndicator.style.display = "block"; // show typing indicator
+
+            const typingDiv = appendMessage("bot", "AI: ", true);
+
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                typingDiv.classList.remove("typing");
+                typingDiv.textContent = "AI: ";
+                typingIndicator.style.display = "none"; // hide typing indicator
+                await typeText(typingDiv, data.reply);
+            } catch (err) {
+                typingDiv.classList.remove("typing");
+                typingIndicator.style.display = "none";
+                typingDiv.textContent = "AI Error: " + err.message;
+            }
+        }
+
+        async function typeText(element, text) {
+            for (let i = 0; i < text.length; i++) {
+                element.textContent += text[i];
+                await new Promise(resolve => setTimeout(resolve, 20)); // typing speed
+                chatbox.scrollTop = chatbox.scrollHeight;
+            }
+        }
+
+        userInput.addEventListener("keydown", function(e) {
+            if (e.key === "Enter") sendMessage();
+        });
+    </script>
+
+</body>
+</html>
